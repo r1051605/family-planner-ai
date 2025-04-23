@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:class="${themeClass}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Family Planner - Register</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" th:href="${theme}">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <div class="logo">
+      <h1>Family Planner</h1>
+    </div>
+    <nav class="main-nav">
+      <ul>
+        <li><a th:href="@{/}">Home</a></li>
+        <li><a th:href="@{/login}">Login</a></li>
+        <li><a th:href="@{/register}" class="active">Register</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <section class="auth-section">
+    <h2>Create an Account</h2>
+
+    <div th:if="${error}" class="alert alert-error" th:text="${error}">
+      Error message
+    </div>
+
+    <form th:action="@{/register}" th:object="${user}" method="post" class="auth-form">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" th:field="*{username}" class="form-control" required>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" th:field="*{email}" class="form-control" required>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" th:field="*{password}" class="form-control" required>
+      </div>
+
+      <div class="form-group family-options">
+        <div class="family-option">
+          <input type="radio" id="create-family" name="familyOption" value="create" checked>
+          <label for="create-family">Create a new family</label>
+        </div>
+
+        <div class="family-option">
+          <input type="radio" id="join-family" name="familyOption" value="join">
+          <label for="join-family">Join an existing family</label>
+        </div>
+      </div>
+
+      <div id="family-code-group" class="form-group" style="display: none;">
+        <label for="family-code">Family Code</label>
+        <input type="text" id="family-code" name="familyCode" class="form-control">
+        <p class="form-help">Enter the family code provided by your family admin.</p>
+      </div>
+
+      <button type="submit" class="btn btn-primary">Register</button>
+    </form>
+
+    <div class="auth-links">
+      <p>Already have an account? <a th:href="@{/login}">Login</a></p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p>&copy; 2025 Family Planner</p>
+  </div>
+</footer>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const createFamilyRadio = document.getElementById('create-family');
+    const joinFamilyRadio = document.getElementById('join-family');
+    const familyCodeGroup = document.getElementById('family-code-group');
+
+    // Show/hide family code input based on selected option
+    createFamilyRadio.addEventListener('change', function() {
+      if (this.checked) {
+        familyCodeGroup.style.display = 'none';
+      }
+    });
+
+    joinFamilyRadio.addEventListener('change', function() {
+
+      if (this.checked) {
+        familyCodeGroup.style.display = 'block';
+      }
+    });
+  });
+</script>
+</body>
+</html>

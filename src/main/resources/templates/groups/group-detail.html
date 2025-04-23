@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:class="${themeClass}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="'Family Planner - ' + ${group.name}">Family Planner - Group</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" th:href="${theme}">
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <div class="logo">
+      <h1>Family Planner</h1>
+    </div>
+    <nav class="main-nav">
+      <ul>
+        <li><a th:href="@{/home}">Dashboard</a></li>
+        <li><a th:href="@{/calendar}">Calendar</a></li>
+        <li><a th:href="@{/shopping}">Shopping List</a></li>
+        <li><a th:href="@{/tasks}">Tasks</a></li>
+        <li><a th:href="@{/groups}" class="active">Groups</a></li>
+        <li><a th:href="@{/chat}">Family Chat</a></li>
+        <li><a th:href="@{/logout}">Logout</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <section class="group-detail-section">
+    <div class="group-header">
+      <div class="group-title">
+        <h2 th:text="${group.name}">Group Name</h2>
+        <p th:text="${group.description}">Group description</p>
+      </div>
+      <div class="group-actions">
+        <a th:href="@{/groups}" class="btn btn-secondary">Back to Groups</a>
+        <button id="add-member-btn" class="btn btn-primary">Add Member</button>
+      </div>
+    </div>
+
+    <!-- Error message if present -->
+    <div class="error-message" th:if="${param.error}">
+      <p th:if="${param.error[0] == 'invalid'}">Invalid input. Please try again.</p>
+    </div>
+
+    <!-- Members List -->
+    <div class="members-container">
+      <h3>Members <span th:text="'(' + ${group.members.size()} + ')'">Members</span></h3>
+      <p th:if="${group.members.empty}">No members in this group yet. Click "Add Member" to add someone.</p>
+
+      <div th:unless="${group.members.empty}" class="members-list">
+        <div class="member-headers">
+          <span class="member-name-header">Name</span>
+          <span class="member-visit-header">Next Visit</span>
+          <span class="member-actions-header">Actions</span>
+        </div>
+        <div th:each="member : ${group.members}" class="member-row">
+          <span class="member-name" th:text="${member.name}">Member Name</span>
+          <span class="member-visit" th:if="${member.visitDate != null}"
+                th:text="${#temporals.format(member.visitDate, 'MMM dd, yyyy HH:mm')}">
+                            Visit Date
+                        </span>
+          <span class="member-visit" th:unless="${member.visitDate != null}">
+                            No visit scheduled
+                        </span>
+          <div class="member-actions">
+            <button class="btn-edit-visit" th:data-id="${member.id}" th:data-name="${member.name}">
+              Schedule Visit
+            </button>
+            <button class="btn-delete-member btn-danger" th:data-id="${member.id}">
+              Remove
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Member Modal -->
+    <div id="add-member-modal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3>Add Group Member</h3>
+        <form th:action="@{/groups/{id}/members/add(id=${group.id})}" th:object="${newMember}" method="post">
+          <div class="form-group">
+            <label for="member-name">Name</label>
+            <input type="text" id="member-name" th:field="*{name}" class="form-control" required>
+          </div>
+
+          <div class="form-group">
+            <label for="visit-date">Visit Date (Optional)</label>
+            <input type="datetime-local" id="visit-date" name="visitDate" class="form-control">
+          </div>
+
+          <button type="submit" class="btn btn-primary">Add Member</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Schedule Visit Modal -->
+    <div id="schedule-visit-modal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3>Schedule Visit</h3>
+        <form id="schedule-visit-form">
+          <input type="hidden" id="member-id" name="memberId">
+
+          <div class="form-group">
+            <label id="schedule-member-name">Member Name</label>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-visit-date">Visit Date</label>
+            <input type="datetime-local" id="edit-visit-date" name="visitDate" class="form-control" required>
+          </div>
+
+          <button type="submit" class="btn btn-primary">Save</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Delete Member Confirmation Modal -->
+    <div id="delete-member-modal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3>Remove Member</h3>
+        <p>Are you sure you want to remove this member from the group?</p>
+        <div class="modal-actions">
+          <button id="confirm-delete-member" class="btn btn-danger">Remove</button>
+          <button id="cancel-delete-member" class="btn btn-secondary">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p>&copy; 2025 Family Planner</p>
+  </div>
+</footer>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const addMemberModal = document.getElementById('add-member-modal');
+    const scheduleVisitModal = document.getElementById('schedule-visit-modal');
+    const deleteMemberModal = document.getElementById('delete-member-modal');
+    const addMemberBtn = document.getElementById('add-member-btn');
+    const closeBtns = document.querySelectorAll('.close');
+    const confirmDeleteMemberBtn = document.getElementById('confirm-delete-member');
+    const cancelDeleteMemberBtn = document.getElementById('cancel-delete-member');
+    const scheduleVisitForm = document.getElementById('schedule-visit-form');
+
+    let selectedMemberId = null;
+
+    const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+
+    // Event listeners for member actions
+    document.querySelectorAll('.btn-edit-visit').forEach(btn => {
+      btn.addEventListener('click', function() {
+        selectedMemberId = this.getAttribute('data-id');
+        const memberName = this.getAttribute('data-name');
+        document.getElementById('member-id').value = selectedMemberId;
+        document.getElementById('schedule-member-name').textContent = memberName;
+        openScheduleVisitModal();
+      });
+    });
+
+    document.querySelectorAll('.btn-delete-member').forEach(btn => {
+      btn.addEventListener('click', function() {
+        selectedMemberId = this.getAttribute('data-id');
+        openDeleteMemberModal();
+      });
+    });
+
+    // Modal event listeners
+    addMemberBtn.addEventListener('click', openAddMemberModal);
+
+    closeBtns.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        addMemberModal.style.display = 'none';
+        scheduleVisitModal.style.display = 'none';
+        deleteMemberModal.style.display = 'none';
+      });
+    });
+
+    if (scheduleVisitForm) {
+      scheduleVisitForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const visitDate = document.getElementById('edit-visit-date').value;
+        updateVisitDate(selectedMemberId, visitDate);
+      });
+    }
+
+    confirmDeleteMemberBtn.addEventListener('click', function() {
+      if (selectedMemberId) {
+        deleteMember(selectedMemberId);
+      }
+    });
+
+    cancelDeleteMemberBtn.addEventListener('click', function() {
+      deleteMemberModal.style.display = 'none';
+    });
+
+    // Close modal when clicking outside
+    window.addEventListener('click', function(event) {
+      if (event.target === addMemberModal) {
+        addMemberModal.style.display = 'none';
+      }
+      if (event.target === scheduleVisitModal) {
+        scheduleVisitModal.style.display = 'none';
+      }
+      if (event.target === deleteMemberModal) {
+        deleteMemberModal.style.display = 'none';
+      }
+    });
+
+    // Helper functions
+    function openAddMemberModal() {
+      addMemberModal.style.display = 'block';
+    }
+
+    function openScheduleVisitModal() {
+      scheduleVisitModal.style.display = 'block';
+    }
+
+    function openDeleteMemberModal() {
+      deleteMemberModal.style.display = 'block';
+    }
+
+    function updateVisitDate(memberId, visitDate) {
+      // This would typically be an AJAX request to update the visit date
+      // For simplicity, we're just reloading the page with the form action
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = `/groups/members/${memberId}/update-visit`;
+
+      // CSRF token field
+      const csrfField = document.createElement('input');
+      csrfField.type = 'hidden';
+      csrfField.name = '_csrf';
+      csrfField.value = csrfToken;
+      form.appendChild(csrfField);
+
+      // Visit date field
+      const dateField = document.createElement('input');
+      dateField.type = 'hidden';
+      dateField.name = 'visitDate';
+      dateField.value = visitDate;
+      form.appendChild(dateField);
+
+      document.body.appendChild(form);
+      form.submit();
+    }
+
+    function deleteMember(memberId) {
+      fetch(`/groups/members/${memberId}`, {
+        method: 'DELETE',
+        headers: {
+          [csrfHeader]: csrfToken
+        }
+      })
+              .then(response => {
+                if (response.ok) {
+                  return response.json();
+                }
+                throw new Error('Error removing member');
+              })
+              .then(groupId => {
+                window.location.reload();
+              })
+              .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while removing the member.');
+              });
+    }
+  });
+</script>
+</body>
+</html>

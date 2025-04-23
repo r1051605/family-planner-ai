@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:class="${themeClass}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Family Planner - Calendar</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" th:href="${theme}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.10.2/main.min.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <div class="logo">
+      <h1>Family Planner</h1>
+    </div>
+    <nav class="main-nav">
+      <ul>
+        <li><a th:href="@{/}">Home</a></li>
+        <li><a th:href="@{/calendar/view}" class="active">Calendar</a></li>
+        <li sec:authorize="isAuthenticated()">
+          <a th:href="@{/shopping}">Shopping List</a>
+        </li>
+        <li sec:authorize="isAuthenticated()">
+          <a th:href="@{/tasks}">Tasks</a>
+        </li>
+        <li sec:authorize="isAuthenticated()">
+          <a th:href="@{/groups}">Groups</a>
+        </li>
+        <li sec:authorize="isAuthenticated()">
+          <a th:href="@{/chat}">Family Chat</a>
+        </li>
+        <li sec:authorize="isAuthenticated()">
+          <a th:href="@{/logout}">Logout</a>
+        </li>
+        <li sec:authorize="!isAuthenticated()">
+          <a th:href="@{/login}">Login</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <section class="calendar-section">
+    <div class="calendar-header">
+      <h2>Calendar</h2>
+      <div class="calendar-actions" sec:authorize="isAuthenticated()">
+        <a th:href="@{/calendar}" class="btn btn-primary">Manage Calendar</a>
+        <a th:href="@{/calendar/sync}" class="btn btn-secondary">Sync Calendars</a>
+      </div>
+    </div>
+
+    <div id="calendar"></div>
+
+    <div class="calendar-legend">
+      <h3>Legend</h3>
+      <ul>
+        <li><span class="legend-color holiday-event"></span> Belgian Holidays</li>
+        <li sec:authorize="isAuthenticated()"><span class="legend-color family-event"></span> Family Events</li>
+      </ul>
+    </div>
+
+    <div class="calendar-notice" sec:authorize="!isAuthenticated()">
+      <p>Log in to add and manage your family events.</p>
+      <div class="cta-buttons">
+        <a href="/login" class="btn btn-primary">Login</a>
+        <a href="/register" class="btn btn-secondary">Register</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p>&copy; 2025 Family Planner</p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.10.2/main.min.js"></script>
+<script th:inline="javascript">
+  document.addEventListener('DOMContentLoaded', function() {
+    const calendarEl = document.getElementById('calendar');
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridMonth,timeGridWeek,timeGridDay'
+      },
+      events: {
+        url: '/calendar/events',
+        method: 'GET',
+        failure: function() {
+          alert('There was an error loading events!');
+        }
+      },
+      eventClick: function(info) {
+        if (info.event.extendedProps.description) {
+          alert(info.event.title + '\n\n' + info.event.extendedProps.description);
+        }
+      },
+      eventTimeFormat: {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }
+    });
+
+    calendar.render();
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:class="${themeClass}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Family Planner - Groups</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" th:href="${theme}">
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <div class="logo">
+      <h1>Family Planner</h1>
+    </div>
+    <nav class="main-nav">
+      <ul>
+        <li><a th:href="@{/home}">Dashboard</a></li>
+        <li><a th:href="@{/calendar}">Calendar</a></li>
+        <li><a th:href="@{/shopping}">Shopping List</a></li>
+        <li><a th:href="@{/tasks}">Tasks</a></li>
+        <li><a th:href="@{/groups}" class="active">Groups</a></li>
+        <li><a th:href="@{/chat}">Family Chat</a></li>
+        <li><a th:href="@{/logout}">Logout</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <section class="groups-section">
+    <div class="groups-header">
+      <h2>Groups</h2>
+      <div class="groups-actions">
+        <button id="create-group-btn" class="btn btn-primary">Create Group</button>
+      </div>
+    </div>
+
+    <!-- Error message if present -->
+    <div class="error-message" th:if="${param.error}">
+      <p th:if="${param.error[0] == 'nopermission'}">You don't have permission to view this group.</p>
+    </div>
+
+    <!-- Upcoming Visits Section -->
+    <div class="upcoming-visits">
+      <h3>Upcoming Visits</h3>
+      <div class="visit-list">
+        <p th:if="${upcomingVisits.empty}">No upcoming visits scheduled.</p>
+        <div th:unless="${upcomingVisits.empty}" class="visit-cards">
+          <div th:each="visit : ${upcomingVisits}" class="visit-card">
+            <div class="visit-date">
+              <span th:text="${#temporals.format(visit.visitDate, 'MMM dd')}">May 15</span>
+              <span th:text="${#temporals.format(visit.visitDate, 'HH:mm')}">15:00</span>
+            </div>
+            <div class="visit-info">
+              <h4 th:text="${visit.name}">Visitor Name</h4>
+              <p>Group: <a th:href="@{/groups/{id}(id=${visit.group.id})}" th:text="${visit.group.name}">Group Name</a></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Groups List -->
+    <div class="groups-list">
+      <h3>Your Groups</h3>
+      <p th:if="${groups.empty}">You haven't created any groups yet. Click "Create Group" to get started.</p>
+      <div th:unless="${groups.empty}" class="group-cards">
+        <div th:each="group : ${groups}" class="group-card">
+          <div class="group-header">
+            <h4><a th:href="@{/groups/{id}(id=${group.id})}" th:text="${group.name}">Group Name</a></h4>
+            <span class="member-count" th:text="${group.members.size() + ' members'}">0 members</span>
+          </div>
+          <p th:text="${group.description}">Group description goes here.</p>
+          <div class="group-footer">
+            <a th:href="@{/groups/{id}(id=${group.id})}" class="btn btn-secondary">View Group</a>
+            <button class="btn-delete btn btn-danger" th:data-id="${group.id}"
+                    th:if="${group.createdBy.id == user.id || user.role == T(com.familyplanner.model.User.Role).PARENT}">
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create Group Modal -->
+    <div id="group-modal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3>Create New Group</h3>
+        <form th:action="@{/groups/create}" th:object="${newGroup}" method="post">
+          <div class="form-group">
+            <label for="name">Group Name</label>
+            <input type="text" id="name" th:field="*{name}" class="form-control" required>
+          </div>
+
+          <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" th:field="*{description}" class="form-control" rows="3"></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-primary">Create Group</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3>Delete Group</h3>
+        <p>Are you sure you want to delete this group? This will also delete all members in the group.</p>
+        <div class="modal-actions">
+          <button id="confirm-delete" class="btn btn-danger">Delete</button>
+          <button id="cancel-delete" class="btn btn-secondary">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p>&copy; 2025 Family Planner</p>
+  </div>
+</footer>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const groupModal = document.getElementById('group-modal');
+    const deleteModal = document.getElementById('delete-modal');
+    const createGroupBtn = document.getElementById('create-group-btn');
+    const closeBtns = document.querySelectorAll('.close');
+    const confirmDeleteBtn = document.getElementById('confirm-delete');
+    const cancelDeleteBtn = document.getElementById('cancel-delete');
+
+    let selectedGroupId = null;
+
+    const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+
+    // Event listeners for group actions
+    document.querySelectorAll('.btn-delete').forEach(btn => {
+      btn.addEventListener('click', function() {
+        selectedGroupId = this.getAttribute('data-id');
+        openDeleteModal();
+      });
+    });
+
+    // Modal event listeners
+    createGroupBtn.addEventListener('click', openGroupModal);
+
+    closeBtns.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        groupModal.style.display = 'none';
+        deleteModal.style.display = 'none';
+      });
+    });
+
+    confirmDeleteBtn.addEventListener('click', function() {
+      if (selectedGroupId) {
+        deleteGroup(selectedGroupId);
+      }
+    });
+
+    cancelDeleteBtn.addEventListener('click', function() {
+      deleteModal.style.display = 'none';
+    });
+
+    // Close modal when clicking outside
+    window.addEventListener('click', function(event) {
+      if (event.target === groupModal) {
+        groupModal.style.display = 'none';
+      }
+      if (event.target === deleteModal) {
+        deleteModal.style.display = 'none';
+      }
+    });
+
+    // Helper functions
+    function openGroupModal() {
+      groupModal.style.display = 'block';
+    }
+
+    function openDeleteModal() {
+      deleteModal.style.display = 'block';
+    }
+
+    function deleteGroup(groupId) {
+      fetch(`/groups/${groupId}`, {
+        method: 'DELETE',
+        headers: {
+          [csrfHeader]: csrfToken
+        }
+      })
+              .then(response => {
+                if (response.ok) {
+                  window.location.reload();
+                } else {
+                  alert('Error deleting group. You may not have permission to delete this group.');
+                }
+              })
+              .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while deleting the group.');
+              });
+    }
+  });
+</script>
+</body>
+</html>

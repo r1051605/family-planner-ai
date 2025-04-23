@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:class="${themeClass}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Family Planner - Invite Family Members</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" th:href="${theme}">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <div class="logo">
+      <h1>Family Planner</h1>
+    </div>
+    <nav class="main-nav">
+      <ul>
+        <li><a th:href="@{/home}">Dashboard</a></li>
+        <li><a th:href="@{/calendar}">Calendar</a></li>
+        <li><a th:href="@{/shopping}">Shopping List</a></li>
+        <li><a th:href="@{/tasks}">Tasks</a></li>
+        <li><a th:href="@{/groups}">Groups</a></li>
+        <li><a th:href="@{/chat}">Family Chat</a></li>
+        <li><a th:href="@{/logout}">Logout</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <section class="invite-section">
+    <div class="section-header">
+      <h2>Invite Family Members</h2>
+      <div class="section-actions">
+        <a th:href="@{/family/members}" class="btn btn-secondary">Manage Members</a>
+      </div>
+    </div>
+
+    <div class="invite-container">
+      <h3>Family Invitation Code</h3>
+      <p>Share this code with your family members so they can join your family:</p>
+
+      <div class="invite-code">
+        <span id="invite-code" th:text="${inviteCode}">12345</span>
+        <button id="copy-code" class="btn btn-secondary">Copy</button>
+      </div>
+
+      <div class="invite-instructions">
+        <h3>How to Join</h3>
+        <ol>
+          <li>New members should go to <span class="emphasis" th:text="${#httpServletRequest.serverName} + '/register'">familyplanner.com/register</span></li>
+          <li>They should select "Join an existing family"</li>
+          <li>Enter the invitation code above</li>
+          <li>Complete the registration form</li>
+        </ol>
+      </div>
+
+      <div class="invite-roles">
+        <h3>Role Information</h3>
+        <p>When family members join, they will be assigned the "Kid" role by default. You can change roles
+          in the "Manage Members" page after they join.</p>
+
+        <table class="role-table">
+          <thead>
+          <tr>
+            <th>Role</th>
+            <th>Permissions</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr>
+            <td>Parent</td>
+            <td>Full access to all features, including admin features</td>
+          </tr>
+          <tr>
+            <td>Teen</td>
+            <td>Can add tasks and shopping items, but not manage family</td>
+          </tr>
+          <tr>
+            <td>Kid</td>
+            <td>Limited access - can view and use basic features only</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p>&copy; 2025 Family Planner</p>
+  </div>
+</footer>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const copyBtn = document.getElementById('copy-code');
+    const inviteCode = document.getElementById('invite-code');
+
+    copyBtn.addEventListener('click', function() {
+      // Create a temporary textarea element to copy text
+      const textarea = document.createElement('textarea');
+      textarea.value = inviteCode.textContent;
+      document.body.appendChild(textarea);
+      textarea.select();
+
+      try {
+        // Copy text to clipboard
+        document.execCommand('copy');
+        copyBtn.textContent = 'Copied!';
+
+        // Reset button text after 2 seconds
+        setTimeout(function() {
+          copyBtn.textContent = 'Copy';
+        }, 2000);
+      } catch (err) {
+        console.error('Failed to copy code:', err);
+        copyBtn.textContent = 'Error';
+      }
+
+      document.body.removeChild(textarea);
+    });
+  });
+</script>
+</body>
+</html>

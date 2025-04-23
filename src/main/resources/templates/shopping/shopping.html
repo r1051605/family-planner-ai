@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:class="${themeClass}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Family Planner - Shopping List</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" th:href="${theme}">
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <div class="logo">
+      <h1>Family Planner</h1>
+    </div>
+    <nav class="main-nav">
+      <ul>
+        <li><a th:href="@{/home}">Dashboard</a></li>
+        <li><a th:href="@{/calendar}">Calendar</a></li>
+        <li><a th:href="@{/shopping}" class="active">Shopping List</a></li>
+        <li><a th:href="@{/tasks}">Tasks</a></li>
+        <li><a th:href="@{/groups}">Groups</a></li>
+        <li><a th:href="@{/chat}">Family Chat</a></li>
+        <li><a th:href="@{/logout}">Logout</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <section class="shopping-section">
+    <div class="shopping-header">
+      <h2>Shopping List</h2>
+      <div class="shopping-actions">
+        <button id="add-item-btn" class="btn btn-primary">Add Item</button>
+        <form th:action="@{/shopping/clear-bought}" method="post" class="inline-form">
+          <button type="submit" class="btn btn-secondary">Clear Bought Items</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="shopping-list-container">
+      <div class="shopping-stats">
+        <p><span th:text="${shoppingItems.size()}">0</span> items total |
+          <span th:text="${shoppingItems.stream().filter(item -> item.isBought()).count()}">0</span> bought |
+          <span th:text="${shoppingItems.stream().filter(item -> !item.isBought()).count()}">0</span> remaining</p>
+      </div>
+
+      <div class="shopping-list">
+        <p th:if="${shoppingItems.empty}">Your shopping list is empty. Click "Add Item" to add items.</p>
+
+        <div th:unless="${shoppingItems.empty}" class="category-list">
+          <div th:each="category : ${itemsByCategory}" class="category-group">
+            <h3 th:text="${category.key}">Category Name</h3>
+            <ul class="item-list">
+              <li th:each="item : ${category.value}" class="shopping-item"
+                  th:classappend="${item.bought ? 'bought' : ''}">
+                <div class="item-checkbox">
+                  <input type="checkbox" th:checked="${item.bought}"
+                         th:data-id="${item.id}" class="toggle-item">
+                </div>
+                <div class="item-details">
+                  <span class="item-name" th:text="${item.name}">Item Name</span>
+                  <span th:if="${item.quantity != null}" class="item-quantity">
+                                            (<span th:text="${item.quantity}">1</span>)
+                                        </span>
+                </div>
+                <div class="item-actions">
+                  <button class="btn-delete" th:data-id="${item.id}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                  </button>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Item Modal -->
+    <div id="add-item-modal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3>Add Shopping Item</h3>
+        <form th:action="@{/shopping/add}" th:object="${newItem}" method="post">
+          <div class="form-group">
+            <label for="name">Item Name</label>
+            <input type="text" id="name" th:field="*{name}" class="form-control" required>
+          </div>
+
+          <div class="form-group">
+            <label for="quantity">Quantity (Optional)</label>
+            <input type="number" id="quantity" th:field="*{quantity}" class="form-control" min="1">
+          </div>
+
+          <div class="form-group">
+            <label for="category">Category</label>
+            <select id="category" th:field="*{category}" class="form-control">
+              <option th:each="cat : ${categories}"
+                      th:value="${cat}"
+                      th:text="${cat}">
+                Category
+              </option>
+            </select>
+          </div>
+
+          <button type="submit" class="btn btn-primary">Add Item</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3>Delete Item</h3>
+        <p>Are you sure you want to delete this item?</p>
+        <div class="modal-actions">
+          <button id="confirm-delete" class="btn btn-danger">Delete</button>
+          <button id="cancel-delete" class="btn btn-secondary">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p>&copy; 2025 Family Planner</p>
+  </div>
+</footer>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const addItemModal = document.getElementById('add-item-modal');
+    const deleteModal = document.getElementById('delete-modal');
+    const addItemBtn = document.getElementById('add-item-btn');
+    const closeBtns = document.querySelectorAll('.close');
+    const confirmDeleteBtn = document.getElementById('confirm-delete');
+    const cancelDeleteBtn = document.getElementById('cancel-delete');
+
+    let selectedItemId = null;
+
+    const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+
+    // Event listeners for shopping item actions
+    document.querySelectorAll('.toggle-item').forEach(checkbox => {
+      checkbox.addEventListener('change', function() {
+        const itemId = this.getAttribute('data-id');
+        toggleItemBought(itemId);
+      });
+    });
+
+    document.querySelectorAll('.btn-delete').forEach(btn => {
+      btn.addEventListener('click', function() {
+        selectedItemId = this.getAttribute('data-id');
+        openDeleteModal();
+      });
+    });
+
+    // Modal event listeners
+    addItemBtn.addEventListener('click', openAddItemModal);
+
+    closeBtns.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        addItemModal.style.display = 'none';
+        deleteModal.style.display = 'none';
+      });
+    });
+
+    confirmDeleteBtn.addEventListener('click', function() {
+      if (selectedItemId) {
+        deleteItem(selectedItemId);
+      }
+    });
+
+    cancelDeleteBtn.addEventListener('click', function() {
+      deleteModal.style.display = 'none';
+    });
+
+    // Close modal when clicking outside
+    window.addEventListener('click', function(event) {
+      if (event.target === addItemModal) {
+        addItemModal.style.display = 'none';
+      }
+      if (event.target === deleteModal) {
+        deleteModal.style.display = 'none';
+      }
+    });
+
+    // Helper functions
+    function openAddItemModal() {
+      addItemModal.style.display = 'block';
+    }
+
+    function openDeleteModal() {
+      deleteModal.style.display = 'block';
+    }
+
+    function toggleItemBought(itemId) {
+      fetch(`/shopping/${itemId}/toggle`, {
+        method: 'POST',
+        headers: {
+          [csrfHeader]: csrfToken
+        }
+      })
+              .then(response => {
+                if (response.ok) {
+                  // Update UI without reloading the page
+                  const checkboxEl = document.querySelector(`.toggle-item[data-id="${itemId}"]`);
+                  const listItemEl = checkboxEl.closest('.shopping-item');
+
+                  if (checkboxEl.checked) {
+                    listItemEl.classList.add('bought');
+                  } else {
+                    listItemEl.classList.remove('bought');
+                  }
+
+                  // Update the counter
+                  updateCounters();
+                } else {
+                  alert('Error updating item.');
+                  // Revert checkbox state
+                  const checkbox = document.querySelector(`.toggle-item[data-id="${itemId}"]`);
+                  checkbox.checked = !checkbox.checked;
+                }
+              })
+              .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while updating the item.');
+                // Revert checkbox state
+                const checkbox = document.querySelector(`.toggle-item[data-id="${itemId}"]`);
+                checkbox.checked = !checkbox.checked;
+              });
+    }
+
+    function deleteItem(itemId) {
+      fetch(`/shopping/${itemId}`, {
+        method: 'DELETE',
+        headers: {
+          [csrfHeader]: csrfToken
+        }
+      })
+              .then(response => {
+                if (response.ok) {
+                  // Remove item from UI
+                  const listItemEl = document.querySelector(`.toggle-item[data-id="${itemId}"]`).closest('.shopping-item');
+                  listItemEl.remove();
+
+                  deleteModal.style.display = 'none';
+
+                  // Update counters
+                  updateCounters();
+
+                  // Check if category is now empty and remove it if needed
+                  checkEmptyCategories();
+                } else {
+                  alert('Error deleting item.');
+                }
+              })
+              .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while deleting the item.');
+              });
+    }
+
+    function updateCounters() {
+      const totalItems = document.querySelectorAll('.shopping-item').length;
+      const boughtItems = document.querySelectorAll('.shopping-item.bought').length;
+      const remainingItems = totalItems - boughtItems;
+
+      const statsEl = document.querySelector('.shopping-stats p');
+      statsEl.innerHTML = `<span>${totalItems}</span> items total |
+                                    <span>${boughtItems}</span> bought |
+                                    <span>${remainingItems}</span> remaining`;
+    }
+
+    function checkEmptyCategories() {
+      document.querySelectorAll('.category-group').forEach(categoryGroup => {
+        const items = categoryGroup.querySelectorAll('.shopping-item');
+        if (items.length === 0) {
+          categoryGroup.remove();
+        }
+      });
+
+      // Check if shopping list is now empty
+      const categoryGroups = document.querySelectorAll('.category-group');
+      if (categoryGroups.length === 0) {
+        const shoppingListEl = document.querySelector('.shopping-list');
+        shoppingListEl.innerHTML = '<p>Your shopping list is empty. Click "Add Item" to add items.</p>';
+      }
+    }
+  });
+</script>
+</body>
+</html>

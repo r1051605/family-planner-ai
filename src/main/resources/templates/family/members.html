@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:class="${themeClass}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Family Planner - Manage Family Members</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" th:href="${theme}">
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <div class="logo">
+      <h1>Family Planner</h1>
+    </div>
+    <nav class="main-nav">
+      <ul>
+        <li><a th:href="@{/home}">Dashboard</a></li>
+        <li><a th:href="@{/calendar}">Calendar</a></li>
+        <li><a th:href="@{/shopping}">Shopping List</a></li>
+        <li><a th:href="@{/tasks}">Tasks</a></li>
+        <li><a th:href="@{/groups}">Groups</a></li>
+        <li><a th:href="@{/chat}">Family Chat</a></li>
+        <li><a th:href="@{/logout}">Logout</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <section class="members-section">
+    <div class="section-header">
+      <h2>Manage Family Members</h2>
+      <div class="section-actions">
+        <a th:href="@{/family/invite}" class="btn btn-primary">Invite Members</a>
+      </div>
+    </div>
+
+    <!-- Success/Error messages -->
+    <div th:if="${success}" class="alert alert-success" th:text="${success}">
+      Success message
+    </div>
+
+    <div th:if="${error}" class="alert alert-error" th:text="${error}">
+      Error message
+    </div>
+
+    <div class="members-container">
+      <h3 th:text="${family.name + ' - Members (' + members.size() + ')'}">Family Members</h3>
+
+      <div class="members-list">
+        <div class="member-headers">
+          <span class="member-name-header">Name</span>
+          <span class="member-email-header">Email</span>
+          <span class="member-role-header">Role</span>
+          <span class="member-actions-header">Actions</span>
+        </div>
+
+        <div th:each="member : ${members}" class="member-row">
+          <span class="member-name" th:text="${member.username}">Member Name</span>
+          <span class="member-email" th:text="${member.email}">member@example.com</span>
+          <span class="member-role" th:text="${member.role}">PARENT</span>
+          <div class="member-actions">
+            <!-- Only show edit/remove options for non-owners -->
+            <div th:if="${member != family.owner}">
+              <button class="btn-edit-role" th:data-id="${member.id}" th:data-name="${member.username}">
+                Change Role
+              </button>
+              <button class="btn-remove btn-danger" th:data-id="${member.id}" th:data-name="${member.username}">
+                Remove
+              </button>
+            </div>
+            <div th:if="${member == family.owner}" class="owner-badge">
+              Owner
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Role Modal -->
+    <div id="edit-role-modal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3>Change Member Role</h3>
+        <p id="edit-role-member">Member Name</p>
+
+        <form id="edit-role-form">
+          <input type="hidden" id="member-id" name="memberId">
+
+          <div class="form-group">
+            <label for="role">Select Role</label>
+            <select id="role" name="role" class="form-control">
+              <option value="PARENT">Parent</option>
+              <option value="TEEN">Teen</option>
+              <option value="KID">Kid</option>
+            </select>
+          </div>
+
+          <div class="role-descriptions">
+            <div class="role-description">
+              <h4>Parent</h4>
+              <p>Full access to all features, including admin features</p>
+            </div>
+            <div class="role-description">
+              <h4>Teen</h4>
+              <p>Can add tasks and shopping items, but not manage family</p>
+            </div>
+            <div class="role-description">
+              <h4>Kid</h4>
+              <p>Limited access - can view and use basic features only</p>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Remove Member Modal -->
+    <div id="remove-modal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3>Remove Family Member</h3>
+        <p>Are you sure you want to remove <span id="remove-member-name">Member Name</span> from your family?</p>
+        <p class="warning">This action cannot be undone. The member will need to be re-invited to join again.</p>
+
+        <form id="remove-form">
+          <input type="hidden" id="remove-member-id" name="memberId">
+
+          <div class="modal-actions">
+            <button type="submit" class="btn btn-danger">Remove Member</button>
+            <button type="button" id="cancel-remove" class="btn btn-secondary">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p>&copy; 2025 Family Planner</p>
+  </div>
+</footer>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const editRoleModal = document.getElementById('edit-role-modal');
+    const removeModal = document.getElementById('remove-modal');
+    const editRoleForm = document.getElementById('edit-role-form');
+    const removeForm = document.getElementById('remove-form');
+    const closeBtns = document.querySelectorAll('.close');
+    const cancelRemoveBtn = document.getElementById('cancel-remove');
+
+    const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+
+    // Edit role buttons
+    document.querySelectorAll('.btn-edit-role').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const memberId = this.getAttribute('data-id');
+        const memberName = this.getAttribute('data-name');
+
+        document.getElementById('member-id').value = memberId;
+        document.getElementById('edit-role-member').textContent = memberName;
+
+        editRoleModal.style.display = 'block';
+      });
+    });
+
+    // Remove member buttons
+    document.querySelectorAll('.btn-remove').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const memberId = this.getAttribute('data-id');
+        const memberName = this.getAttribute('data-name');
+
+        document.getElementById('remove-member-id').value = memberId;
+        document.getElementById('remove-member-name').textContent = memberName;
+
+        removeModal.style.display = 'block';
+      });
+    });
+
+    // Close modal buttons
+    closeBtns.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        editRoleModal.style.display = 'none';
+        removeModal.style.display = 'none';
+      });
+    });
+
+    // Cancel remove button
+    cancelRemoveBtn.addEventListener('click', function() {
+      removeModal.style.display = 'none';
+    });
+
+    // Edit role form submission
+    editRoleForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const memberId = document.getElementById('member-id').value;
+      const role = document.getElementById('role').value;
+
+      // Submit role change
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = `/family/members/${memberId}/role`;
+
+      // Add CSRF token
+      const csrfField = document.createElement('input');
+      csrfField.type = 'hidden';
+      csrfField.name = '_csrf';
+      csrfField.value = csrfToken;
+      form.appendChild(csrfField);
+
+      // Add role field
+      const roleField = document.createElement('input');
+      roleField.type = 'hidden';
+      roleField.name = 'role';
+      roleField.value = role;
+      form.appendChild(roleField);
+
+      document.body.appendChild(form);
+      form.submit();
+    });
+
+    // Remove member form submission
+    removeForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const memberId = document.getElementById('remove-member-id').value;
+
+      // Submit member removal
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = `/family/members/${memberId}/remove`;
+
+      // Add CSRF token
+      const csrfField = document.createElement('input');
+      csrfField.type = 'hidden';
+      csrfField.name = '_csrf';
+      csrfField.value = csrfToken;
+      form.appendChild(csrfField);
+
+      document.body.appendChild(form);
+      form.submit();
+    });
+
+    // Close modal when clicking outside
+    window.addEventListener('click', function(event) {
+      if (event.target === editRoleModal) {
+        editRoleModal.style.display = 'none';
+      }
+      if (event.target === removeModal) {
+        removeModal.style.display = 'none';
+      }
+    });
+  });
+</script>
+</body>
+</html>

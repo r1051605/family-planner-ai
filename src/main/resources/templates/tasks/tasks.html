@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:class="${themeClass}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Family Planner - Tasks</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" th:href="${theme}">
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <div class="logo">
+      <h1>Family Planner</h1>
+    </div>
+    <nav class="main-nav">
+      <ul>
+        <li><a th:href="@{/home}">Dashboard</a></li>
+        <li><a th:href="@{/calendar}">Calendar</a></li>
+        <li><a th:href="@{/shopping}">Shopping List</a></li>
+        <li><a th:href="@{/tasks}" class="active">Tasks</a></li>
+        <li><a th:href="@{/groups}">Groups</a></li>
+        <li><a th:href="@{/chat}">Family Chat</a></li>
+        <li><a th:href="@{/logout}">Logout</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <section class="tasks-section">
+    <div class="tasks-header">
+      <h2>Family Tasks</h2>
+      <div class="tasks-actions" sec:authorize="hasAnyAuthority('PARENT', 'TEEN')">
+        <button id="create-task-btn" class="btn btn-primary">Create Task</button>
+      </div>
+    </div>
+
+    <!-- Error message if present -->
+    <div class="error-message" th:if="${param.error}">
+      <p th:if="${param.error[0] == 'nopermission'}">You don't have permission to perform this action.</p>
+    </div>
+
+    <!-- Your Tasks -->
+    <div class="tasks-container your-tasks">
+      <h3>Your Tasks</h3>
+      <div class="task-list">
+        <p th:if="${userTasks.empty}">You have no assigned tasks.</p>
+        <div th:unless="${userTasks.empty}" class="task-cards">
+          <div th:each="task : ${userTasks}" class="task-card" th:data-id="${task.id}">
+            <div class="task-header">
+              <h4 th:text="${task.title}">Task Title</h4>
+              <span th:class="'task-status ' + ${task.status.toString().toLowerCase()}"
+                    th:text="${task.status}">Status</span>
+            </div>
+            <p th:text="${task.description}">Task description goes here.</p>
+            <div class="task-footer">
+              <button th:if="${task.status != T(com.familyplanner.model.Task.TaskStatus).COMPLETED}"
+                      class="btn-complete btn btn-secondary" th:data-id="${task.id}">
+                Mark Complete
+              </button>
+              <span th:if="${task.status == T(com.familyplanner.model.Task.TaskStatus).COMPLETED}"
+                    class="completed-text">
+                                    Completed
+                                </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Unassigned Tasks -->
+    <div class="tasks-container unassigned-tasks">
+      <h3>Unassigned Tasks</h3>
+      <div class="task-list">
+        <p th:if="${unassignedTasks.empty}">There are no unassigned tasks.</p>
+        <div th:unless="${unassignedTasks.empty}" class="task-cards">
+          <div th:each="task : ${unassignedTasks}" class="task-card" th:data-id="${task.id}">
+            <div class="task-header">
+              <h4 th:text="${task.title}">Task Title</h4>
+              <span class="task-status unassigned">Unassigned</span>
+            </div>
+            <p th:text="${task.description}">Task description goes here.</p>
+            <div class="task-footer">
+              <button class="btn-claim btn btn-primary" th:data-id="${task.id}">
+                Claim Task
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- All Family Tasks -->
+    <div class="tasks-container family-tasks">
+      <h3>All Family Tasks</h3>
+      <div class="task-list">
+        <p th:if="${familyTasks.empty}">There are no family tasks.</p>
+        <div th:unless="${familyTasks.empty}" class="task-cards">
+          <div th:each="task : ${familyTasks}" class="task-card" th:data-id="${task.id}">
+            <div class="task-header">
+              <h4 th:text="${task.title}">Task Title</h4>
+              <span th:class="'task-status ' + ${task.status.toString().toLowerCase()}"
+                    th:text="${task.status}">Status</span>
+            </div>
+            <p th:text="${task.description}">Task description goes here.</p>
+            <div class="task-info">
+              <p th:if="${task.assignedTo != null}" class="assigned-to">
+                Assigned to: <span th:text="${task.assignedTo.username}">Username</span>
+              </p>
+              <p th:unless="${task.assignedTo != null}" class="assigned-to">
+                Not assigned
+              </p>
+              <p class="created-by">
+                Created by: <span th:text="${task.createdBy.username}">Creator</span>
+              </p>
+            </div>
+            <div class="task-footer" sec:authorize="hasAuthority('PARENT')">
+              <button class="btn-assign btn btn-secondary"
+                      th:data-id="${task.id}"
+                      th:unless="${task.status == T(com.familyplanner.model.Task.TaskStatus).COMPLETED}">
+                Assign
+              </button>
+              <button class="btn-delete btn btn-danger" th:data-id="${task.id}">
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Task Creation Modal -->
+    <div id="task-modal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3>Create New Task</h3>
+        <form th:action="@{/tasks/create}" th:object="${newTask}" method="post">
+          <div class="form-group">
+            <label for="title">Title</label>
+            <input type="text" id="title" th:field="*{title}" class="form-control" required>
+          </div>
+
+          <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" th:field="*{description}" class="form-control" rows="3"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="assignedTo">Assign To (Optional)</label>
+            <select id="assignedTo" th:field="*{assignedTo}" class="form-control">
+              <option value="">-- Unassigned --</option>
+              <option th:each="member : ${familyMembers}"
+                      th:value="${member.id}"
+                      th:text="${member.username}">
+                Username
+              </option>
+            </select>
+          </div>
+
+          <button type="submit" class="btn btn-primary">Create Task</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Task Assignment Modal -->
+    <div id="assign-modal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3>Assign Task</h3>
+        <form id="assign-form">
+          <div class="form-group">
+            <label for="assign-to">Assign To</label>
+            <select id="assign-to" name="assignTo" class="form-control">
+              <option value="">-- Select Family Member --</option>
+              <option th:each="member : ${familyMembers}"
+                      th:value="${member.id}"
+                      th:text="${member.username}">
+                Username
+              </option>
+            </select>
+          </div>
+
+          <button type="submit" class="btn btn-primary">Assign Task</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Task Deletion Confirmation Modal -->
+    <div id="delete-modal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3>Delete Task</h3>
+        <p>Are you sure you want to delete this task?</p>
+        <div class="modal-actions">
+          <button id="confirm-delete" class="btn btn-danger">Delete</button>
+          <button id="cancel-delete" class="btn btn-secondary">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p>&copy; 2025 Family Planner</p>
+  </div>
+</footer>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const taskModal = document.getElementById('task-modal');
+    const assignModal = document.getElementById('assign-modal');
+    const deleteModal = document.getElementById('delete-modal');
+    const createTaskBtn = document.getElementById('create-task-btn');
+    const closeBtns = document.querySelectorAll('.close');
+    const confirmDeleteBtn = document.getElementById('confirm-delete');
+    const cancelDeleteBtn = document.getElementById('cancel-delete');
+
+    let selectedTaskId = null;
+
+    const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+
+    // Event listeners for task actions
+    document.querySelectorAll('.btn-claim').forEach(btn => {
+      document.addEventListener('DOMContentLoaded', function() {
+        const taskModal = document.getElementById('task-modal');
+        const assignModal = document.getElementById('assign-modal');
+        const deleteModal = document.getElementById('delete-modal');
+        const createTaskBtn = document.getElementById('create-task-btn');
+        const closeBtns = document.querySelectorAll('.close');
+        const confirmDeleteBtn = document.getElementById('confirm-delete');
+        const cancelDeleteBtn = document.getElementById('cancel-delete');
+        const assignForm = document.getElementById('assign-form');
+
+        let selectedTaskId = null;
+
+        const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+
+        // Event listeners for task actions
+        document.querySelectorAll('.btn-claim').forEach(btn => {
+          btn.addEventListener('click', function() {
+            const taskId = this.getAttribute('data-id');
+            claimTask(taskId);
+          });
+        });
+
+        document.querySelectorAll('.btn-complete').forEach(btn => {
+          btn.addEventListener('click', function() {
+            const taskId = this.getAttribute('data-id');
+            completeTask(taskId);
+          });
+        });
+
+        document.querySelectorAll('.btn-assign').forEach(btn => {
+          btn.addEventListener('click', function() {
+            selectedTaskId = this.getAttribute('data-id');
+            openAssignModal();
+          });
+        });
+
+        document.querySelectorAll('.btn-delete').forEach(btn => {
+          btn.addEventListener('click', function() {
+            selectedTaskId = this.getAttribute('data-id');
+            openDeleteModal();
+          });
+        });
+
+        // Modal event listeners
+        if (createTaskBtn) {
+          createTaskBtn.addEventListener('click', openTaskModal);
+        }
+
+        closeBtns.forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            taskModal.style.display = 'none';
+            assignModal.style.display = 'none';
+            deleteModal.style.display = 'none';
+          });
+        });
+
+        if (assignForm) {
+          assignForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const userId = document.getElementById('assign-to').value;
+            if (userId && selectedTaskId) {
+              assignTask(selectedTaskId, userId);
+            }
+          });
+        }
+
+        confirmDeleteBtn.addEventListener('click', function() {
+          if (selectedTaskId) {
+            deleteTask(selectedTaskId);
+          }
+        });
+
+        cancelDeleteBtn.addEventListener('click', function() {
+          deleteModal.style.display = 'none';
+        });
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(event) {
+          if (event.target === taskModal) {
+            taskModal.style.display = 'none';
+          }
+          if (event.target === assignModal) {
+            assignModal.style.display = 'none';
+          }
+          if (event.target === deleteModal) {
+            deleteModal.style.display = 'none';
+          }
+        });
+
+        // Helper functions
+        function openTaskModal() {
+          taskModal.style.display = 'block';
+        }
+
+        function openAssignModal() {
+          assignModal.style.display = 'block';
+        }
+
+        function openDeleteModal() {
+          deleteModal.style.display = 'block';
+        }
+
+        function claimTask(taskId) {
+          fetch(`/tasks/${taskId}/claim`, {
+            method: 'POST',
+            headers: {
+              [csrfHeader]: csrfToken
+            }
+          })
+                  .then(response => {
+                    if (response.ok) {
+                      window.location.reload();
+                    } else {
+                      alert('Error claiming task. This task may already be assigned.');
+                    }
+                  })
+                  .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while claiming the task.');
+                  });
+        }
+
+        function completeTask(taskId) {
+          fetch(`/tasks/${taskId}/complete`, {
+            method: 'POST',
+            headers: {
+              [csrfHeader]: csrfToken
+            }
+          })
+                  .then(response => {
+                    if (response.ok) {
+                      window.location.reload();
+                    } else {
+                      alert('Error completing task.');
+                    }
+                  })
+                  .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while marking the task as complete.');
+                  });
+        }
+
+        function assignTask(taskId, userId) {
+          fetch(`/tasks/${taskId}/assign/${userId}`, {
+            method: 'POST',
+            headers: {
+              [csrfHeader]: csrfToken
+            }
+          })
+                  .then(response => {
+                    if (response.ok) {
+                      assignModal.style.display = 'none';
+                      window.location.reload();
+                    } else {
+                      alert('Error assigning task. You may not have permission to assign tasks.');
+                    }
+                  })
+                  .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while assigning the task.');
+                  });
+        }
+
+        function deleteTask(taskId) {
+          fetch(`/tasks/${taskId}`, {
+            method: 'DELETE',
+            headers: {
+              [csrfHeader]: csrfToken
+            }
+          })
+                  .then(response => {
+                    if (response.ok) {
+                      deleteModal.style.display = 'none';
+                      window.location.reload();
+                    } else {
+                      alert('Error deleting task. You may not have permission to delete this task.');
+                    }
+                  })
+                  .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while deleting the task.');
+                  });
+        }
+      });

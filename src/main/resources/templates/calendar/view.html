@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:class="${themeClass}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Family Planner - Manage Calendar</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" th:href="${theme}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.10.2/main.min.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <div class="logo">
+      <h1>Family Planner</h1>
+    </div>
+    <nav class="main-nav">
+      <ul>
+        <li><a th:href="@{/home}">Dashboard</a></li>
+        <li><a th:href="@{/calendar}" class="active">Calendar</a></li>
+        <li><a th:href="@{/shopping}">Shopping List</a></li>
+        <li><a th:href="@{/tasks}">Tasks</a></li>
+        <li><a th:href="@{/groups}">Groups</a></li>
+        <li><a th:href="@{/chat}">Family Chat</a></li>
+        <li><a th:href="@{/logout}">Logout</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <section class="calendar-section">
+    <div class="calendar-header">
+      <h2>Manage Calendar</h2>
+      <div class="calendar-actions">
+        <button id="create-event-btn" class="btn btn-primary">Create Event</button>
+        <a th:href="@{/calendar/sync}" class="btn btn-secondary">Sync Calendars</a>
+      </div>
+    </div>
+
+    <div id="calendar"></div>
+
+    <!-- Event Creation Modal -->
+    <div id="event-modal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3>Create New Event</h3>
+        <form th:action="@{/calendar/create}" th:object="${newEvent}" method="post">
+          <div class="form-group">
+            <label for="title">Title</label>
+            <input type="text" id="title" th:field="*{title}" class="form-control" required>
+          </div>
+
+          <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" th:field="*{description}" class="form-control" rows="3"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="start-time">Start Time</label>
+            <input type="datetime-local" id="start-time" th:field="*{startTime}" class="form-control" required>
+          </div>
+
+          <div class="form-group">
+            <label for="end-time">End Time</label>
+            <input type="datetime-local" id="end-time" th:field="*{endTime}" class="form-control">
+          </div>
+
+          <button type="submit" class="btn btn-primary">Save Event</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Event Deletion Confirmation Modal -->
+    <div id="delete-modal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3>Delete Event</h3>
+        <p>Are you sure you want to delete this event?</p>
+        <div class="modal-actions">
+          <button id="confirm-delete" class="btn btn-danger">Delete</button>
+          <button id="cancel-delete" class="btn btn-secondary">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p>&copy; 2025 Family Planner</p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.10.2/main.min.js"></script>
+<script th:inline="javascript">
+  document.addEventListener('DOMContentLoaded', function() {
+    const calendarEl = document.getElementById('calendar');
+    const eventModal = document.getElementById('event-modal');
+    const deleteModal = document.getElementById('delete-modal');
+    const createEventBtn = document.getElementById('create-event-btn');
+    const closeBtns = document.querySelectorAll('.close');
+    const confirmDeleteBtn = document.getElementById('confirm-delete');
+    const cancelDeleteBtn = document.getElementById('cancel-delete');
+
+    let selectedEvent = null;
+
+    // Initialize FullCalendar
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridMonth,timeGridWeek,timeGridDay'
+      },
+      selectable: true,
+      select: function(info) {
+        // When selecting a date range, open create event modal with date pre-filled
+        document.getElementById('start-time').value = formatDateForInput(info.start);
+        document.getElementById('end-time').value = formatDateForInput(info.end);
+        openEventModal();
+      },
+      events: {
+        url: '/calendar/events',
+        method: 'GET',
+        failure: function() {
+          alert('There was an error loading events!');
+        }
+      },
+      eventClick: function(info) {
+        // Skip actions for holiday events
+        if (info.event.classNames.includes('holiday-event')) {
+          if (info.event.extendedProps.description) {
+            alert(info.event.title + '\n\n' + info.event.extendedProps.description);
+          }
+          return;
+        }
+
+        // For editable events, show options
+        if (info.event.extendedProps.editable) {
+          selectedEvent = info.event;
+          openDeleteModal();
+        } else {
+          // For non-editable events, just show info
+          if (info.event.extendedProps.description) {
+            alert(info.event.title + '\n\n' + info.event.extendedProps.description);
+          }
+        }
+      },
+      eventTimeFormat: {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }
+    });
+
+    // Render calendar
+    calendar.render();
+
+    // Event listeners for modals
+    createEventBtn.addEventListener('click', openEventModal);
+
+    closeBtns.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        eventModal.style.display = 'none';
+        deleteModal.style.display = 'none';
+      });
+    });
+
+    confirmDeleteBtn.addEventListener('click', function() {
+      if (selectedEvent) {
+        deleteEvent(selectedEvent.id);
+      }
+    });
+
+    cancelDeleteBtn.addEventListener('click', function() {
+      deleteModal.style.display = 'none';
+    });
+
+    // Close modal when clicking outside
+    window.addEventListener('click', function(event) {
+      if (event.target === eventModal) {
+        eventModal.style.display = 'none';
+      }
+      if (event.target === deleteModal) {
+        deleteModal.style.display = 'none';
+      }
+    });
+
+    // Helper functions
+    function openEventModal() {
+      eventModal.style.display = 'block';
+    }
+
+    function openDeleteModal() {
+      deleteModal.style.display = 'block';
+    }
+
+    function formatDateForInput(date) {
+      const d = new Date(date);
+      // Format: YYYY-MM-DDTHH:MM
+      return d.getFullYear() + '-' +
+              pad(d.getMonth() + 1) + '-' +
+              pad(d.getDate()) + 'T' +
+              pad(d.getHours()) + ':' +
+              pad(d.getMinutes());
+    }
+
+    function pad(number) {
+      return number < 10 ? '0' + number : number;
+    }
+
+    function deleteEvent(eventId) {
+      fetch(`/calendar/${eventId}`, {
+        method: 'DELETE',
+        headers: {
+          'X-CSRF-TOKEN': document.querySelector('meta[name="_csrf"]').content
+        }
+      })
+              .then(response => {
+                if (response.ok) {
+                  // Remove event from calendar
+                  selectedEvent.remove();
+                  deleteModal.style.display = 'none';
+                } else {
+                  alert('Error deleting event. You may not have permission to delete this event.');
+                }
+              })
+              .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while deleting the event.');
+              });
+    }
+  });

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:class="${themeClass}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Planner - Sync Calendars</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" th:href="${theme}">
+</head>
+<body>
+<header class="site-header">
+    <div class="container">
+        <div class="logo">
+            <h1>Family Planner</h1>
+        </div>
+        <nav class="main-nav">
+            <ul>
+                <li><a th:href="@{/home}">Dashboard</a></li>
+                <li><a th:href="@{/calendar}">Calendar</a></li>
+                <li><a th:href="@{/shopping}">Shopping List</a></li>
+                <li><a th:href="@{/tasks}">Tasks</a></li>
+                <li><a th:href="@{/groups}">Groups</a></li>
+                <li><a th:href="@{/chat}">Family Chat</a></li>
+                <li><a th:href="@{/logout}">Logout</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+<main class="container">
+    <section class="sync-section">
+        <h2>Sync External Calendars</h2>
+        <p>Connect your external calendars to keep everything in one place.</p>
+
+        <div class="sync-options">
+            <div class="sync-card">
+                <div class="sync-icon google-icon">
+                    <img src="/images/google-calendar-icon.png" alt="Google Calendar">
+                </div>
+                <h3>Google Calendar</h3>
+                <p>Sync your Google Calendar events with Family Planner.</p>
+                <button id="google-sync" class="btn btn-primary">Connect Google Calendar</button>
+            </div>
+
+            <div class="sync-card">
+                <div class="sync-icon outlook-icon">
+                    <img src="/images/outlook-calendar-icon.png" alt="Outlook Calendar">
+                </div>
+                <h3>Outlook Calendar</h3>
+                <p>Sync your Outlook Calendar events with Family Planner.</p>
+                <button id="outlook-sync" class="btn btn-primary">Connect Outlook Calendar</button>
+            </div>
+
+            <div class="sync-card">
+                <div class="sync-icon icloud-icon">
+                    <img src="/images/icloud-calendar-icon.png" alt="iCloud Calendar">
+                </div>
+                <h3>iCloud Calendar</h3>
+                <p>Sync your iCloud Calendar events with Family Planner.</p>
+                <button id="icloud-sync" class="btn btn-primary">Connect iCloud Calendar</button>
+            </div>
+        </div>
+
+        <div class="sync-settings">
+            <h3>Sync Settings</h3>
+            <form th:action="@{/calendar/sync/settings}" method="post">
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" name="twoWaySync" checked>
+                        Enable two-way sync (changes in either calendar will be reflected in the other)
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" name="syncNotifications" checked>
+                        Receive notifications about sync status
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label for="sync-frequency">Sync frequency:</label>
+                    <select id="sync-frequency" name="syncFrequency" class="form-control">
+                        <option value="15">Every 15 minutes</option>
+                        <option value="30">Every 30 minutes</option>
+                        <option value="60" selected>Every hour</option>
+                        <option value="360">Every 6 hours</option>
+                        <option value="720">Every 12 hours</option>
+                        <option value="1440">Once a day</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Save Settings</button>
+            </form>
+        </div>
+    </section>
+</main>
+
+<footer class="site-footer">
+    <div class="container">
+        <p>&copy; 2025 Family Planner</p>
+    </div>
+</footer>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const googleSyncBtn = document.getElementById('google-sync');
+        const outlookSyncBtn = document.getElementById('outlook-sync');
+        const icloudSyncBtn = document.getElementById('icloud-sync');
+
+        googleSyncBtn.addEventListener('click', function() {
+            window.location.href = '/calendar/sync/google';
+        });
+
+        outlookSyncBtn.addEventListener('click', function() {
+            window.location.href = '/calendar/sync/outlook';
+        });
+
+        icloudSyncBtn.addEventListener('click', function() {
+            window.location.href = '/calendar/sync/icloud';
+        });
+    });
+</script>
+</body>
+</html>

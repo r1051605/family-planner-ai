@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:class="${themeClass}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Family Planner - Family Chat</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" th:href="${theme}">
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <div class="logo">
+      <h1>Family Planner</h1>
+    </div>
+    <nav class="main-nav">
+      <ul>
+        <li><a th:href="@{/home}">Dashboard</a></li>
+        <li><a th:href="@{/calendar}">Calendar</a></li>
+        <li><a th:href="@{/shopping}">Shopping List</a></li>
+        <li><a th:href="@{/tasks}">Tasks</a></li>
+        <li><a th:href="@{/groups}">Groups</a></li>
+        <li><a th:href="@{/chat}" class="active">Family Chat</a></li>
+        <li><a th:href="@{/logout}">Logout</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <section class="chat-section">
+    <div class="chat-header">
+      <h2>Family Chat</h2>
+    </div>
+
+    <div class="chat-container">
+      <div id="chat-messages" class="chat-messages">
+        <!-- Existing chat messages -->
+        <div th:each="message : ${messages}" class="message"
+             th:classappend="${message.sender.id == user.id ? 'message-own' : ''}">
+          <div class="message-header">
+            <span class="message-sender" th:text="${message.sender.username}">Sender</span>
+            <span class="message-time" th:text="${#temporals.format(message.timestamp, 'HH:mm')}">Time</span>
+          </div>
+          <div class="message-content" th:text="${message.content}">Message content</div>
+        </div>
+      </div>
+
+      <div class="chat-input">
+        <form id="chat-form">
+          <input type="text" id="message-input" placeholder="Type your message..." required>
+          <button type="submit" class="btn btn-primary">Send</button>
+        </form>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p>&copy; 2025 Family Planner</p>
+  </div>
+</footer>
+
+<!-- SockJS and STOMP for WebSocket -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.0/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+
+<script th:inline="javascript">
+  document.addEventListener('DOMContentLoaded', function() {
+    const chatForm = document.getElementById('chat-form');
+    const messageInput = document.getElementById('message-input');
+    const chatMessages = document.getElementById('chat-messages');
+
+    const currentUser = [[${user}]];
+    const stompClient = Stomp.over(new SockJS('/ws'));
+
+    // Connect to WebSocket
+    stompClient.connect({}, function(frame) {
+      console.log('Connected: ' + frame);
+
+      // Subscribe to the family chat topic
+      stompClient.subscribe('/topic/family', function(message) {
+        showMessage(JSON.parse(message.body));
+      });
+    });
+
+    // Chat form submission
+    chatForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      if (messageInput.value.trim() === '') {
+        return;
+      }
+
+      const chatMessage = {
+        content: messageInput.value
+      };
+
+      // Send message to server
+      stompClient.send("/app/send", {}, JSON.stringify(chatMessage));
+
+      // Clear input
+      messageInput.value = '';
+    });
+
+    // Function to display a new message
+    function showMessage(message) {
+      const messageDiv = document.createElement('div');
+      messageDiv.classList.add('message');
+
+      // Add 'message-own' class if the message is from current user
+      if (message.sender.id === currentUser.id) {
+        messageDiv.classList.add('message-own');
+      }
+
+      const messageHeader = document.createElement('div');
+      messageHeader.classList.add('message-header');
+
+      const senderSpan = document.createElement('span');
+      senderSpan.classList.add('message-sender');
+      senderSpan.textContent = message.sender.username;
+
+      const timeSpan = document.createElement('span');
+      timeSpan.classList.add('message-time');
+
+      // Format timestamp
+      const date = new Date(message.timestamp);
+      timeSpan.textContent = `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+
+      messageHeader.appendChild(senderSpan);
+      messageHeader.appendChild(timeSpan);
+
+      const messageContent = document.createElement('div');
+      messageContent.classList.add('message-content');
+      messageContent.textContent = message.content;
+
+      messageDiv.appendChild(messageHeader);
+      messageDiv.appendChild(messageContent);
+
+      chatMessages.appendChild(messageDiv);
+
+      // Scroll to bottom
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function pad(number) {
+      return number < 10 ? '0' + number : number;
+    }
+
+    // Scroll to bottom of chat on load
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  });
+</script>
+</body>
+</html>

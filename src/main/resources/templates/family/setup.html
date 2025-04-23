@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:class="${themeClass}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Family Planner - Setup Family</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" th:href="${theme}">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <div class="logo">
+      <h1>Family Planner</h1>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <section class="setup-section">
+    <h2>Complete Your Family Setup</h2>
+    <p>Welcome to Family Planner! Let's set up your family.</p>
+
+    <form th:action="@{/family/setup/complete}" method="post" class="setup-form">
+      <div class="form-group">
+        <label for="family-name">Family Name</label>
+        <input type="text" id="family-name" name="familyName" class="form-control"
+               th:value="${family.name}" required>
+        <p class="form-help">Enter a name for your family (e.g., "The Smiths" or "Smith Family")</p>
+      </div>
+
+      <div class="setup-info">
+        <h3>What's Next?</h3>
+        <p>After completing setup, we'll create default tasks, shopping items, and groups for your family.
+          You can customize everything once you're on the dashboard.</p>
+      </div>
+
+      <button type="submit" class="btn btn-primary">Complete Setup</button>
+    </form>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p>&copy; 2025 Family Planner</p>
+  </div>
+</footer>
+</body>
+</html>
