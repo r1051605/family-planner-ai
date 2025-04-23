@@ -1,10 +1,127 @@
 <!DOCTYPE html>
-<html lang="en">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:class="${themeClass}">
 <head>
   <meta charset="UTF-8">
-  <title>$Title$</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Family Planner - Dashboard</title>
+  <link rel="stylesheet" href="/static/css/main.css">
+  <link rel="stylesheet" th:href="${theme}">
 </head>
 <body>
-$END$
+<header class="site-header">
+  <div class="container">
+    <div class="logo">
+      <h1>Family Planner</h1>
+    </div>
+    <nav class="main-nav">
+      <ul>
+        <li><a th:href="@{/home}" class="active">Dashboard</a></li>
+        <li><a th:href="@{/calendar}">Calendar</a></li>
+        <li><a th:href="@{/shopping}">Shopping List</a></li>
+        <li><a th:href="@{/tasks}">Tasks</a></li>
+        <li><a th:href="@{/groups}">Groups</a></li>
+        <li><a th:href="@{/chat}">Family Chat</a></li>
+        <li sec:authorize="hasAuthority('PARENT')">
+          <a th:href="@{/admin}">Admin</a>
+        </li>
+        <li>
+          <a th:href="@{/logout}">Logout</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main class="container dashboard">
+  <section class="welcome-section">
+    <h2>Welcome, <span th:text="${user.username}">User</span>!</h2>
+
+    <div class="status-selector">
+      <p>Your current status: <span class="current-status" th:text="${userStatus != null ? userStatus.status : 'Not Set'}">Status</span></p>
+      <form th:action="@{/status/update}" method="post">
+        <select name="status" id="status">
+          <option value="HOME">Home</option>
+          <option value="WORKING">Working</option>
+          <option value="SHOPPING">Shopping</option>
+          <option value="OUT_WITH_FRIENDS">Out with Friends</option>
+          <option value="SCHOOL">School</option>
+          <option value="OTHER">Other</option>
+        </select>
+        <button type="submit" class="btn btn-primary">Update Status</button>
+      </form>
+    </div>
+  </section>
+
+  <div class="dashboard-grid">
+    <section class="dashboard-card calendar-card">
+      <h3>Upcoming Events</h3>
+      <div class="upcoming-events">
+        <!-- List of upcoming events -->
+        <p th:if="${upcomingEvents.empty}">No upcoming events</p>
+        <ul th:unless="${upcomingEvents.empty}">
+          <li th:each="event : ${upcomingEvents}">
+            <span class="event-date" th:text="${#temporals.format(event.startTime, 'dd MMM')}">Date</span>
+            <span class="event-title" th:text="${event.title}">Event Title</span>
+          </li>
+        </ul>
+      </div>
+      <a th:href="@{/calendar}" class="btn btn-secondary">View Calendar</a>
+    </section>
+
+    <section class="dashboard-card tasks-card">
+      <h3>Your Tasks</h3>
+      <div class="your-tasks">
+        <!-- List of user's tasks -->
+        <p th:if="${userTasks.empty}">You have no assigned tasks</p>
+        <ul th:unless="${userTasks.empty}">
+          <li th:each="task : ${userTasks}">
+            <input type="checkbox" th:checked="${task.status == T(com.familyplanner.model.Task.TaskStatus).COMPLETED}" disabled>
+            <span th:text="${task.title}">Task Title</span>
+          </li>
+        </ul>
+      </div>
+      <a th:href="@{/tasks}" class="btn btn-secondary">View All Tasks</a>
+    </section>
+
+    <section class="dashboard-card shopping-card">
+      <h3>Shopping List</h3>
+      <div class="shopping-list">
+        <!-- Shopping list items -->
+        <p th:if="${shoppingItems.empty}">Shopping list is empty</p>
+        <ul th:unless="${shoppingItems.empty}">
+          <li th:each="item : ${shoppingItems}" th:class="${item.bought ? 'bought' : ''}">
+            <span th:text="${item.name}">Item Name</span>
+            <span class="item-quantity" th:if="${item.quantity != null}" th:text="${'(' + item.quantity + ')'}"></span>
+          </li>
+        </ul>
+      </div>
+      <a th:href="@{/shopping}" class="btn btn-secondary">View Shopping List</a>
+    </section>
+
+    <section class="dashboard-card family-card">
+      <h3>Family Status</h3>
+      <div class="family-status">
+        <!-- Family members status -->
+        <ul>
+          <li th:each="member : ${familyMembers}">
+            <span class="member-name" th:text="${member.username}">Member Name</span>
+            <span class="member-status" th:text="${memberStatus.getOrDefault(member.id, 'Unknown')}">Status</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p>&copy; 2025 Family Planner</p>
+  </div>
+</footer>
+
+<script src="/js/main.js"></script>
+<script src="/js/dashboard.js"></script>
 </body>
 </html>

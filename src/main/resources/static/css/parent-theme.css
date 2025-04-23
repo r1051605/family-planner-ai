@@ -1,0 +1,48 @@
+.parent-theme {
+    --bg-color: #2c3e50;
+    --text-color: #ecf0f1;
+    --card-bg: #34495e;
+    --header-bg: #1a2533;
+    --border-color: #445566;
+    --hover-color: #3a506b;
+}
+
+.parent-theme body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+.parent-theme .site-header {
+    background-color: var(--header-bg);
+}
+
+.parent-theme .main-nav a {
+    color: var(--text-color);
+}
+
+.parent-theme .main-nav a:hover {
+    color: var(--primary-color);
+}
+
+.parent-theme .dashboard-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+}
+
+.parent-theme .site-footer {
+    background-color: var(--header-bg);
+    color: var(--text-color);
+}
+
+.parent-theme input,
+.parent-theme select,
+.parent-theme textarea {
+    background-color: #2a3f52;
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+.parent-theme .form-control:focus {
+    border-color: var(--primary-color);
+    outline: none;
+}

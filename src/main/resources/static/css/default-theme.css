@@ -1,0 +1,65 @@
+.default-theme {
+    --bg-color: #f5f7fa;
+    --text-color: #333;
+    --card-bg: #ffffff;
+    --header-bg: #3498db;
+    --border-color: #e1e5eb;
+    --hover-color: #ebeef2;
+}
+
+.default-theme body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+.default-theme .site-header {
+    background-color: var(--header-bg);
+    color: white;
+}
+
+.default-theme .main-nav a {
+    color: white;
+}
+
+.default-theme .main-nav a:hover {
+    text-decoration: underline;
+}
+
+.default-theme .welcome-section {
+    text-align: center;
+    padding: 60px 0;
+}
+
+.default-theme .welcome-section h2 {
+    font-size: 36px;
+    margin-bottom: 20px;
+}
+
+.default-theme .welcome-section p {
+    font-size: 18px;
+    max-width: 600px;
+    margin: 0 auto 30px;
+}
+
+.default-theme .cta-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.default-theme .calendar-preview {
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+    text-align: center;
+}
+
+.default-theme .calendar-preview h3 {
+    margin-bottom: 10px;
+}
+
+.default-theme .site-footer {
+    background-color: #f5f7fa;
+    border-top: 1px solid var(--border-color);
+}

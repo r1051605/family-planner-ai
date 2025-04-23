@@ -1,0 +1,105 @@
+.kid-theme {
+    --bg-color: #f9f9f9;
+    --text-color: #333;
+    --card-bg: #ffffff;
+    --header-bg: #ff9800;
+    --border-color: #ddd;
+    --hover-color: #ffe0b2;
+    --accent-color: #8bc34a;
+    --secondary-accent: #03a9f4;
+    --tertiary-accent: #e91e63;
+}
+
+.kid-theme body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+}
+
+.kid-theme .site-header {
+    background-color: var(--header-bg);
+    border-radius: 0 0 15px 15px;
+}
+
+.kid-theme .logo h1 {
+    color: white;
+    text-shadow: 2px 2px 0px #e65100;
+}
+
+.kid-theme .main-nav a {
+    color: white;
+    font-weight: bold;
+    padding: 8px 15px;
+    border-radius: 20px;
+    background-color: rgba(255, 255, 255, 0.2);
+    margin: 0 5px;
+    transition: all 0.3s ease;
+}
+
+.kid-theme .main-nav a:hover {
+    background-color: white;
+    color: var(--header-bg);
+    transform: scale(1.1);
+}
+
+.kid-theme .dashboard-card {
+    background-color: var(--card-bg);
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    position: relative;
+}
+
+.kid-theme .dashboard-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 10px;
+}
+
+.kid-theme .calendar-card::before {
+    background-color: var(--accent-color);
+}
+
+.kid-theme .tasks-card::before {
+    background-color: var(--secondary-accent);
+}
+
+.kid-theme .shopping-card::before {
+    background-color: var(--tertiary-accent);
+}
+
+.kid-theme .family-card::before {
+    background-color: var(--header-bg);
+}
+
+.kid-theme h2, .kid-theme h3 {
+    color: #5d4037;
+}
+
+.kid-theme .welcome-section h2 {
+    color: #6d4c41;
+    font-size: 28px;
+    margin-bottom: 15px;
+}
+
+.kid-theme .btn {
+    border-radius: 20px;
+    font-size: 16px;
+    padding: 10px 25px;
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
+}
+
+.kid-theme .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 8px rgba(0, 0, 0, 0.2);
+}
+
+.kid-theme .site-footer {
+    background-color: var(--header-bg);
+    color: white;
+    border-radius: 15px 15px 0 0;
+    padding: 25px 0;
+}

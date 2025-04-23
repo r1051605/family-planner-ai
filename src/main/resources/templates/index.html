@@ -1,10 +1,87 @@
 <!DOCTYPE html>
-<html lang="en">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:class="${themeClass}">
 <head>
   <meta charset="UTF-8">
-  <title>$Title$</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Family Planner</title>
+  <link rel="stylesheet" href="/static/css/main.css">
+  <link rel="stylesheet" th:href="${theme}">
 </head>
 <body>
-$END$
+<header class="site-header">
+  <div class="container">
+    <div class="logo">
+      <h1>Family Planner</h1>
+    </div>
+    <nav class="main-nav">
+      <ul>
+        <li><a th:href="@{/}">Home</a></li>
+        <li><a th:href="@{/calendar/view}">Calendar</a></li>
+        <li sec:authorize="isAuthenticated()">
+          <a th:href="@{/shopping}">Shopping List</a>
+        </li>
+        <li sec:authorize="isAuthenticated()">
+          <a th:href="@{/tasks}">Tasks</a>
+        </li>
+        <li sec:authorize="isAuthenticated()">
+          <a th:href="@{/groups}">Groups</a>
+        </li>
+        <li sec:authorize="isAuthenticated()">
+          <a th:href="@{/chat}">Family Chat</a>
+        </li>
+        <li sec:authorize="hasAuthority('PARENT')">
+          <a th:href="@{/admin}">Admin</a>
+        </li>
+        <li sec:authorize="isAuthenticated()">
+          <a th:href="@{/logout}">Logout</a>
+        </li>
+        <li sec:authorize="!isAuthenticated()">
+          <a th:href="@{/login}">Login</a>
+        </li>
+        <li sec:authorize="!isAuthenticated()">
+          <a th:href="@{/register}">Register</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <section class="welcome-section">
+    <h2 th:if="${user != null}">Welcome, <span th:text="${user.username}">User</span>!</h2>
+    <h2 th:unless="${user != null}">Welcome to Family Planner</h2>
+
+    <p th:unless="${user != null}">
+      Organize your family life with our comprehensive planning tool.
+      Track tasks, manage shopping lists, organize events, and stay connected with your family.
+    </p>
+
+    <div class="cta-buttons" th:unless="${user != null}">
+      <a href="/login" class="btn btn-primary">Login</a>
+      <a href="/register" class="btn btn-secondary">Register</a>
+    </div>
+  </section>
+
+  <section class="calendar-preview" th:unless="${user != null}">
+    <h3>Calendar Preview</h3>
+    <p>View public Belgian holidays and events</p>
+    <div class="calendar-container">
+      <!-- Calendar will be loaded here -->
+      <div id="calendar-placeholder"></div>
+    </div>
+    <p>Login to create and manage your personal events.</p>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p>&copy; 2025 Family Planner</p>
+  </div>
+</footer>
+
+<script src="/js/main.js"></script>
+<script src="/js/calendar.js"></script>
 </body>
 </html>

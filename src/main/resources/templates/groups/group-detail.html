@@ -20,11 +20,11 @@
     <nav class="main-nav">
       <ul>
         <li><a th:href="@{/home}">Dashboard</a></li>
-        <li><a th:href="@{/calendar}">Calendar</a></li>
+        <li><a th:href="@{/templates/calendar}">Calendar</a></li>
         <li><a th:href="@{/shopping}">Shopping List</a></li>
         <li><a th:href="@{/tasks}">Tasks</a></li>
-        <li><a th:href="@{/groups}" class="active">Groups</a></li>
-        <li><a th:href="@{/chat}">Family Chat</a></li>
+        <li><a th:href="@{/templates/groups}" class="active">Groups</a></li>
+        <li><a th:href="@{/templates/chat}">Family Chat</a></li>
         <li><a th:href="@{/logout}">Logout</a></li>
       </ul>
     </nav>
@@ -39,7 +39,7 @@
         <p th:text="${group.description}">Group description</p>
       </div>
       <div class="group-actions">
-        <a th:href="@{/groups}" class="btn btn-secondary">Back to Groups</a>
+        <a th:href="@{/templates/groups}" class="btn btn-secondary">Back to Groups</a>
         <button id="add-member-btn" class="btn btn-primary">Add Member</button>
       </div>
     </div>

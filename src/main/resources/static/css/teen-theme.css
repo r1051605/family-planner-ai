@@ -1,0 +1,52 @@
+.teen-theme {
+    --bg-color: #2c3e50;
+    --text-color: #ecf0f1;
+    --card-bg: #3a506b;
+    --header-bg: #1e3a5f;
+    --border-color: #5d7f9b;
+    --hover-color: #4a6b8a;
+    --accent-color: #e74c3c;
+    --secondary-accent: #f1c40f;
+}
+
+.teen-theme body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+.teen-theme .site-header {
+    background-color: var(--header-bg);
+    border-bottom: 3px solid var(--accent-color);
+}
+
+.teen-theme .main-nav a {
+    color: var(--text-color);
+    font-weight: bold;
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+.teen-theme .main-nav a:hover {
+    background-color: var(--accent-color);
+    color: white;
+}
+
+.teen-theme .dashboard-card {
+    background-color: var(--card-bg);
+    border: none;
+    border-left: 4px solid var(--accent-color);
+}
+
+.teen-theme .dashboard-card:nth-child(2n) {
+    border-left-color: var(--secondary-accent);
+}
+
+.teen-theme h2, .teen-theme h3 {
+    color: var(--accent-color);
+}
+
+.teen-theme .site-footer {
+    background-color: var(--header-bg);
+    color: var(--text-color);
+    border-top: 3px solid var(--accent-color);
+}

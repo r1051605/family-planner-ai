@@ -18,7 +18,7 @@
     </div>
     <nav class="main-nav">
       <ul>
-        <li><a th:href="@{/}">Home</a></li>
+        <li><a th:href="@{/static}">Home</a></li>
         <li><a th:href="@{/calendar/view}" class="active">Calendar</a></li>
         <li sec:authorize="isAuthenticated()">
           <a th:href="@{/shopping}">Shopping List</a>
@@ -48,7 +48,7 @@
     <div class="calendar-header">
       <h2>Calendar</h2>
       <div class="calendar-actions" sec:authorize="isAuthenticated()">
-        <a th:href="@{/calendar}" class="btn btn-primary">Manage Calendar</a>
+        <a th:href="@{/templates/calendar}" class="btn btn-primary">Manage Calendar</a>
         <a th:href="@{/calendar/sync}" class="btn btn-secondary">Sync Calendars</a>
       </div>
     </div>
