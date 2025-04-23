@@ -53,6 +53,9 @@ public class CalendarController {
         model.addAttribute("theme", themeService.getThemeForUser(currentUser));
         model.addAttribute("themeClass", themeService.getThemeClassForUser(currentUser));
 
+        // Add this line to fix the error
+        model.addAttribute("newEvent", new Event());
+
         return "calendar/view";
     }
 
