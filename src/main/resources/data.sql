@@ -8,23 +8,23 @@ INSERT INTO families (id, name, creation_date) VALUES
 -- Create users (password is 'password' encoded with BCrypt)
 -- Add admin parent user
 INSERT INTO users (id, username, password, email, role, family_id, theme_preference) VALUES
-    (8, 'admin', '$2a$10$Dow1H3RzSBR5p/SO7u7a1uLLEJv/YeU7fMIVel9NHYi2rf/r7ORgu', 'admin@example.com', 'PARENT', 1, NULL);
+    (8, 'admin', '$2a$10$gakEqKWH4Ll6TUxelYB8L.QAmA4D.XMHtVMG.XjkuKt8imK/rLsFi', 'admin@example.com', 'PARENT', 1, NULL);
 
 -- PARENT role users
 INSERT INTO users (id, username, password, email, role, family_id, theme_preference) VALUES
-                                                                                         (1, 'john_smith', '$2a$10$rXBaFfe7YYpWN/GMtKlrqeptjhSy0YUCe7OWR4pdXNQfJL2nDgXIq', 'john@example.com', 'PARENT', 1, NULL),
-                                                                                         (2, 'mary_smith', '$2a$10$rXBaFfe7YYpWN/GMtKlrqeptjhSy0YUCe7OWR4pdXNQfJL2nDgXIq', 'mary@example.com', 'PARENT', 1, NULL),
-                                                                                         (3, 'david_johnson', '$2a$10$rXBaFfe7YYpWN/GMtKlrqeptjhSy0YUCe7OWR4pdXNQfJL2nDgXIq', 'david@example.com', 'PARENT', 2, NULL);
+                                                                                         (1, 'john_smith', '$2a$10$gakEqKWH4Ll6TUxelYB8L.QAmA4D.XMHtVMG.XjkuKt8imK/rLsFi', 'john@example.com', 'PARENT', 1, NULL),
+                                                                                         (2, 'mary_smith', '$2a$10$gakEqKWH4Ll6TUxelYB8L.QAmA4D.XMHtVMG.XjkuKt8imK/rLsFi', 'mary@example.com', 'PARENT', 1, NULL),
+                                                                                         (3, 'david_johnson', '$2a$10$gakEqKWH4Ll6TUxelYB8L.QAmA4D.XMHtVMG.XjkuKt8imK/rLsFi', 'david@example.com', 'PARENT', 2, NULL);
 
 -- TEEN role users
 INSERT INTO users (id, username, password, email, role, family_id, theme_preference) VALUES
-                                                                                         (4, 'emma_smith', '$2a$10$rXBaFfe7YYpWN/GMtKlrqeptjhSy0YUCe7OWR4pdXNQfJL2nDgXIq', 'emma@example.com', 'TEEN', 1, NULL),
-                                                                                         (5, 'michael_johnson', '$2a$10$rXBaFfe7YYpWN/GMtKlrqeptjhSy0YUCe7OWR4pdXNQfJL2nDgXIq', 'michael@example.com', 'TEEN', 2, NULL);
+                                                                                         (4, 'emma_smith', '$2a$10$gakEqKWH4Ll6TUxelYB8L.QAmA4D.XMHtVMG.XjkuKt8imK/rLsFi', 'emma@example.com', 'TEEN', 1, NULL),
+                                                                                         (5, 'michael_johnson', '$2a$10$gakEqKWH4Ll6TUxelYB8L.QAmA4D.XMHtVMG.XjkuKt8imK/rLsFi', 'michael@example.com', 'TEEN', 2, NULL);
 
 -- KID role users
 INSERT INTO users (id, username, password, email, role, family_id, theme_preference) VALUES
-                                                                                         (6, 'sarah_smith', '$2a$10$rXBaFfe7YYpWN/GMtKlrqeptjhSy0YUCe7OWR4pdXNQfJL2nDgXIq', 'sarah@example.com', 'KID', 1, NULL),
-                                                                                         (7, 'james_johnson', '$2a$10$rXBaFfe7YYpWN/GMtKlrqeptjhSy0YUCe7OWR4pdXNQfJL2nDgXIq', 'james@example.com', 'KID', 2, NULL);
+                                                                                         (6, 'sarah_smith', '$2a$10$gakEqKWH4Ll6TUxelYB8L.QAmA4D.XMHtVMG.XjkuKt8imK/rLsFi', 'sarah@example.com', 'KID', 1, NULL),
+                                                                                         (7, 'james_johnson', '$2a$10$gakEqKWH4Ll6TUxelYB8L.QAmA4D.XMHtVMG.XjkuKt8imK/rLsFi', 'james@example.com', 'KID', 2, NULL);
 
 -- Set family owners
 UPDATE families SET owner_id = 1 WHERE id = 1;

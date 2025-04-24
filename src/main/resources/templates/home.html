@@ -59,8 +59,8 @@
       <h3>Upcoming Events</h3>
       <div class="upcoming-events">
         <!-- List of upcoming events -->
-        <p th:if="${upcomingEvents.empty}">No upcoming events</p>
-        <ul th:unless="${upcomingEvents.empty}">
+        <p th:if="${#lists.isEmpty(upcomingEvents)}">No upcoming events</p>
+        <ul th:if="${not #lists.isEmpty(upcomingEvents)}">
           <li th:each="event : ${upcomingEvents}">
             <span class="event-date" th:text="${#temporals.format(event.startTime, 'dd MMM')}">Date</span>
             <span class="event-title" th:text="${event.title}">Event Title</span>
@@ -74,8 +74,8 @@
       <h3>Your Tasks</h3>
       <div class="your-tasks">
         <!-- List of user's tasks -->
-        <p th:if="${userTasks.empty}">You have no assigned tasks</p>
-        <ul th:unless="${userTasks.empty}">
+        <p th:if="${#lists.isEmpty(userTasks)}">You have no assigned tasks</p>
+        <ul th:if="${not #lists.isEmpty(userTasks)}">
           <li th:each="task : ${userTasks}">
             <input type="checkbox" th:checked="${task.status == T(com.familyplanner.model.Task.TaskStatus).COMPLETED}" disabled>
             <span th:text="${task.title}">Task Title</span>
@@ -89,8 +89,8 @@
       <h3>Shopping List</h3>
       <div class="shopping-list">
         <!-- Shopping list items -->
-        <p th:if="${shoppingItems.empty}">Shopping list is empty</p>
-        <ul th:unless="${shoppingItems.empty}">
+        <p th:if="${#lists.isEmpty(shoppingItems)}">Shopping list is empty</p>
+        <ul th:if="${not #lists.isEmpty(shoppingItems)}">
           <li th:each="item : ${shoppingItems}" th:class="${item.bought ? 'bought' : ''}">
             <span th:text="${item.name}">Item Name</span>
             <span class="item-quantity" th:if="${item.quantity != null}" th:text="${'(' + item.quantity + ')'}"></span>

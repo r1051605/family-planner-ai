@@ -1,10 +1,12 @@
 package com.familyplanner.familyplanner.controller;
+
 import com.familyplanner.familyplanner.model.Family;
 import com.familyplanner.familyplanner.model.User;
 import com.familyplanner.familyplanner.service.FamilyService;
 import com.familyplanner.familyplanner.service.StatusService;
 import com.familyplanner.familyplanner.service.ThemeService;
 import com.familyplanner.familyplanner.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -20,7 +22,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 
 @Controller
@@ -33,8 +34,10 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
 
     @Autowired
-    public AuthController(UserService userService, FamilyService familyService,
-                          StatusService statusService, ThemeService themeService,
+    public AuthController(UserService userService,
+                          FamilyService familyService,
+                          StatusService statusService,
+                          ThemeService themeService,
                           AuthenticationManager authenticationManager) {
         this.userService = userService;
         this.familyService = familyService;
@@ -47,7 +50,6 @@ public class AuthController {
     public String login(Model model) {
         model.addAttribute("theme", themeService.getThemeForUser(null));
         model.addAttribute("themeClass", themeService.getThemeClassForUser(null));
-
         return "auth/login";
     }
 
@@ -56,7 +58,6 @@ public class AuthController {
         model.addAttribute("user", new User());
         model.addAttribute("theme", themeService.getThemeForUser(null));
         model.addAttribute("themeClass", themeService.getThemeClassForUser(null));
-
         return "auth/register";
     }
 
@@ -67,22 +68,18 @@ public class AuthController {
                                HttpServletRequest request,
                                RedirectAttributes redirectAttributes) {
 
-        // Store the original plain password for auto-login
         String rawPassword = user.getPassword();
 
         if (result.hasErrors()) {
             return "auth/register";
         }
 
-        // Check if username already exists
         if (userService.existsByUsername(user.getUsername())) {
             redirectAttributes.addFlashAttribute("error", "Username already exists");
             return "redirect:/register";
         }
 
-        // Handle family assignment
         if (familyCode != null && !familyCode.isEmpty()) {
-            // Join existing family
             Family family = familyService.getFamilyByCode(familyCode);
 
             if (family == null) {
@@ -91,41 +88,28 @@ public class AuthController {
             }
 
             user.setFamily(family);
-
-            // If no role specified, default to KID role for joining members
             if (user.getRole() == null) {
                 user.setRole(User.Role.KID);
             }
+
+            user = userService.saveUser(user);
         } else {
-            // Create new family
+            user.setRole(User.Role.PARENT);
+            user = userService.saveUser(user);  // ✅ Save user first
+
             Family family = new Family();
             family.setName(user.getUsername() + "'s Family");
             family.setCreationDate(LocalDateTime.now());
-
-            // Set user as PARENT (owner) for new families
-            user.setRole(User.Role.PARENT);
-
-            // Save family first to get ID
-            family = familyService.saveFamily(family);
-
-            // Set owner and family
             family.setOwner(user);
-            user.setFamily(family);
 
-            // Update family with owner
-            family = familyService.saveFamily(family);
+            family = familyService.saveFamily(family); // ✅ Save family after assigning the saved user
+            user.setFamily(family);
+            user = userService.saveUser(user);  // ✅ Update user with family
         }
 
-        // Save the user (this encodes the password)
-        user = userService.saveUser(user);
-
-        // Initialize status
         statusService.initializeUserStatus(user);
-
-        // Auto-login with the original raw password
         autoLogin(user.getUsername(), rawPassword, request);
 
-        // Redirect to family setup if created new family
         if (familyCode == null || familyCode.isEmpty()) {
             return "redirect:/family/setup";
         }
@@ -133,7 +117,6 @@ public class AuthController {
         return "redirect:/home";
     }
 
-    // Method to auto-login after registration
     private void autoLogin(String username, String password, HttpServletRequest request) {
         UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(username, password);
         token.setDetails(new WebAuthenticationDetails(request));
