@@ -67,6 +67,9 @@ public class AuthController {
                                HttpServletRequest request,
                                RedirectAttributes redirectAttributes) {
 
+        // Store the original plain password for auto-login
+        String rawPassword = user.getPassword();
+
         if (result.hasErrors()) {
             return "auth/register";
         }
@@ -113,14 +116,14 @@ public class AuthController {
             family = familyService.saveFamily(family);
         }
 
-        // Save the user
+        // Save the user (this encodes the password)
         user = userService.saveUser(user);
 
         // Initialize status
         statusService.initializeUserStatus(user);
 
-        // Auto-login after registration
-        autoLogin(user.getUsername(), user.getPassword(), request);
+        // Auto-login with the original raw password
+        autoLogin(user.getUsername(), rawPassword, request);
 
         // Redirect to family setup if created new family
         if (familyCode == null || familyCode.isEmpty()) {

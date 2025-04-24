@@ -6,6 +6,10 @@ INSERT INTO families (id, name, creation_date) VALUES
                                                    (2, 'Johnson Family', '2025-04-21 12:00:00');
 
 -- Create users (password is 'password' encoded with BCrypt)
+-- Add admin parent user
+INSERT INTO users (id, username, password, email, role, family_id, theme_preference) VALUES
+    (8, 'admin', '$2a$10$Dow1H3RzSBR5p/SO7u7a1uLLEJv/YeU7fMIVel9NHYi2rf/r7ORgu', 'admin@example.com', 'PARENT', 1, NULL);
+
 -- PARENT role users
 INSERT INTO users (id, username, password, email, role, family_id, theme_preference) VALUES
                                                                                          (1, 'john_smith', '$2a$10$rXBaFfe7YYpWN/GMtKlrqeptjhSy0YUCe7OWR4pdXNQfJL2nDgXIq', 'john@example.com', 'PARENT', 1, NULL),
